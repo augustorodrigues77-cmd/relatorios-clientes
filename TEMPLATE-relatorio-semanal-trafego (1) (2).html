@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Relatório Semanal — Meta Ads</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     TEMPLATE DE RELATÓRIO SEMANAL — GESTÃO DE TRÁFEGO
+     Desenvolvido para uso com Meta Ads (Facebook / Instagram)
+     
+     ✅ INSTRUÇÕES DE USO:
+     1. Edite APENAS o bloco "DADOS DO RELATÓRIO" abaixo (linhas 30–130)
+     2. Não altere nada fora desse bloco (layout, CSS, JS)
+     3. Salve e abra no navegador
+     
+     Para gerar via Claude, use o PROMPT PADRÃO fornecido
+     em separado (arquivo PROMPT-relatorio-semanal.txt)
+============================================================ -->
+
+<script>
+/* ============================================================
+   ██████  DADOS DO RELATÓRIO — EDITE AQUI ██████
+   Troque os valores abaixo com os dados da semana atual.
+   Não altere os nomes das variáveis, apenas os valores.
+============================================================ */
+const RELATORIO = {
+
+  /* ── IDENTIFICAÇÃO ─────────────────────────────── */
+  cliente:        "Estética Jailma",       // Nome do cliente
+  periodo_inicio: "04 Mai 2026",           // Início do período
+  periodo_fim:    "10 Mai 2026",           // Fim do período
+
+  /* ── FUNIL (Visão Geral) ────────────────────────── */
+  impressoes:   29619,   // Total de impressões
+  alcance:      24099,   // Alcance (pessoas únicas)
+  cliques:      278,     // Cliques (todos)
+  conversas:    110,     // Conversas / resultados principais
+
+  /* ── KPIs ───────────────────────────────────────── */
+  valor_gasto:  423.19,  // Valor gasto no período (R$)
+  cpc:          1.55,    // Custo por clique (R$)
+  ctr:          1.55,    // CTR médio (%)
+  cpm:          14.18,   // CPM médio (R$)
+  frequencia:   1.23,    // Frequência média (ex: 1.23)
+  // Custo por conversa é calculado automaticamente
+
+  /* ── DEMOGRÁFICO — por faixa etária ─────────────── */
+  // Formato: { conversas, gasto, cpr (custo/resultado) }
+  demografico: [
+    { faixa: "25–34", conversas: 35, gasto: 103.32, cpr: 2.95 },
+    { faixa: "35–44", conversas: 34, gasto: 114.54, cpr: 3.37 },
+    { faixa: "45–54", conversas: 27, gasto: 107.15, cpr: 3.97 },
+    { faixa: "55–64", conversas: 13, gasto:  53.46, cpr: 4.11 },
+    { faixa: "65+",   conversas:  1, gasto:   2.63, cpr: 2.63 },
+  ],
+
+  /* ── GÊNERO ─────────────────────────────────────── */
+  // Formato: { label, conversas, gasto, alcance }
+  genero: [
+    { label: "Feminino",          conversas: 101, gasto: 366.55, alcance: 21300 },
+    { label: "Masculino",         conversas:   9, gasto:  14.55, alcance:   936 },
+    { label: "Outro/Desconhecido",conversas:   0, gasto:   2.09, alcance:  1863 },
+  ],
+
+  /* ── PRINCIPAIS ANÚNCIOS ────────────────────────── */
+  // Formato: { nome, campanha, tipo ('hot'=Quente | 'rem'=Remarketing),
+  //            conversas, cpr, gasto }
+  anuncios: [
+    { nome: "Ad 14 – 13/01/2026", campanha: "Estética Clínica",  tipo: "hot", conversas: 66, cpr: 2.60, gasto: 171.68 },
+    { nome: "Ad 15 – 13/01/2026", campanha: "Perfil Jailma",     tipo: "rem", conversas: 23, cpr: 7.66, gasto: 176.18 },
+    { nome: "Ad 11 – 13/01/2026", campanha: "Estética Clínica",  tipo: "hot", conversas: 17, cpr: 3.12, gasto:  52.96 },
+    { nome: "Ad 12 – 13/01/2026", campanha: "Estética Clínica",  tipo: "hot", conversas:  3, cpr: 2.31, gasto:   6.94 },
+    { nome: "Ad 15 – 13/01/2026 (Cópia)", campanha: "Perfil Jailma", tipo: "rem", conversas: 1, cpr: 15.43, gasto: 15.43 },
+  ],
+
+  /* ── ANÁLISE CRUZADA (Campanha × Faixa etária) ──── */
+  // Cada linha: { nome, tipo ('hot'|'rem'), total, vals [25-34,35-44,45-54,55-64,65+] }
+  cruzado: [
+    { nome: "Audiência Quente", tipo: "hot", total: 86, vals: [32, 28, 18,  7, 1] },
+    { nome: "Remarketing",      tipo: "rem", total: 24, vals: [ 3,  6,  9,  6, 0] },
+  ],
+
+  /* ── SPARKLINES (tendência diária dos 7 dias) ────── */
+  // 7 valores, um por dia, para cada métrica
+  // Se não tiver dado diário, distribua o total de forma aproximada
+  spark: {
+    conversas: [12, 14, 17, 16, 18, 16, 17],
+    gasto:     [58, 60, 65, 58, 64, 62, 56],
+    cliques:   [35, 38, 45, 37, 43, 42, 38],
+    cpc:       [1.66, 1.58, 1.44, 1.57, 1.49, 1.48, 1.62],
+    ctr:       [1.40, 1.52, 1.68, 1.50, 1.62, 1.58, 1.54],
+    cpr:       [3.95, 4.10, 3.70, 3.60, 3.80, 3.75, 3.60],
+    alcance:   [3100, 3200, 3700, 3400, 3600, 3500, 3599],
+    impressoes:[3800, 4000, 4600, 4200, 4400, 4400, 4219],
+    frequencia:[1.21, 1.22, 1.24, 1.23, 1.23, 1.24, 1.23],
+  },
+
+};
+/* ============================================================
+   ██████  FIM DOS DADOS — NÃO EDITE ABAIXO DESTA LINHA ██████
+============================================================ */
+</script>
+
+<style>
+  :root{
+    --bg:#060610;--bg-card:#0c0c1e;--bg-card2:#10102a;--bg-row:#14142e;
+    --border:rgba(160,120,255,.10);--borderf:rgba(160,120,255,.20);
+    --accent:#a87fff;--accent2:#c9b0ff;--accent3:#6a3fcb;
+    --rose:#e07fcf;--gold:#f0c96a;--green:#5ddba0;--gbg:rgba(93,219,160,.12);
+    --red:#ff7a8e;--rbg:rgba(255,122,142,.12);--blue:#5db8f5;--bbg:rgba(93,184,245,.12);
+    --orange:#f09070;--text:#eeeaf8;--text2:#a397c0;--text3:#6a5a8a;--text4:#3e3458;
+    --r:20px;--rsm:12px;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;
+    background:radial-gradient(ellipse 60% 35% at 85% 5%,rgba(100,50,210,.08),transparent 65%),
+               radial-gradient(ellipse 50% 30% at 5% 90%,rgba(200,70,200,.06),transparent 65%);
+    pointer-events:none;z-index:0}
+  .wrap{max-width:1320px;margin:0 auto;padding:36px 28px 52px;position:relative;z-index:1}
+  /* HEADER */
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:16px}
+  .brand{display:flex;align-items:center;gap:16px}
+  .gem{width:54px;height:54px;border-radius:16px;
+    background:linear-gradient(135deg,#a87fff,#6a3fcb 55%,#d06bcf);
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:0 8px 28px rgba(150,80,255,.4);flex-shrink:0}
+  .brand h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;letter-spacing:-.02em;
+    background:linear-gradient(110deg,#eeeaf8 40%,var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+  .brand p{font-size:12px;color:var(--text3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-top:5px}
+  .hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .pill{display:flex;align-items:center;gap:8px;border-radius:30px;padding:7px 16px;font-size:13px;font-weight:600;white-space:nowrap}
+  .pill-p{background:rgba(168,127,255,.1);border:1px solid rgba(168,127,255,.2);color:var(--accent2)}
+  .pill-p::before{content:'📅';font-size:13px}
+  .pill-g{background:rgba(93,219,160,.08);border:1px solid rgba(93,219,160,.2);color:var(--green)}
+  .dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+  @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(160,120,255,.1) 30%,rgba(160,120,255,.1) 70%,transparent);margin-bottom:26px}
+  /* SECTION */
+  .stitle{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;color:var(--text);
+    margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .stitle .ico{width:26px;height:26px;border-radius:7px;background:rgba(168,127,255,.15);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(160,120,255,.1),transparent)}
+  /* FUNNEL */
+  .funnel{background:var(--bg-card);border:1px solid rgba(160,120,255,.1);border-radius:var(--r);
+    padding:26px 32px;margin-bottom:26px;animation:rise .5s ease both}
+  .f-row{display:flex;flex-direction:column;align-items:center;margin-bottom:10px}
+  .f-row:last-child{margin-bottom:0}
+  .f-lbl{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+  .f-lbl b{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--text);margin-left:6px}
+  .f-bar{height:28px;border-radius:7px;box-shadow:0 3px 16px rgba(168,127,255,.15)}
+  .f-rate{font-size:10.5px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:5px}
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+  @media(max-width:880px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:500px){.kpi-grid{grid-template-columns:1fr}}
+  .kpi{background:var(--bg-card);border:1px solid rgba(160,120,255,.1);border-radius:var(--r);
+    padding:20px 20px 14px;overflow:hidden;transition:transform .25s,box-shadow .25s;cursor:default;animation:rise .5s ease both}
+  .kpi:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(0,0,0,.5)}
+  .kpi-lbl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;min-height:28px}
+  .kpi-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+  .kpi-val{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;line-height:1;color:var(--text)}
+  .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .d-n{background:rgba(93,184,245,.12);color:var(--blue)}
+  .kpi-spark{margin-top:10px;height:30px}
+  .kpi-spark svg{display:block;width:100%;height:30px;overflow:visible}
+  .spark-line{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .spark-area{opacity:.15}
+  /* TWO-COL */
+  .two-col{display:grid;grid-template-columns:1fr 1.25fr;gap:16px;margin-bottom:26px}
+  @media(max-width:880px){.two-col{grid-template-columns:1fr}}
+  .card{background:var(--bg-card);border:1px solid rgba(160,120,255,.1);border-radius:var(--r);padding:22px;animation:rise .5s ease both;animation-delay:.2s}
+  .ctitle{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .csub{font-size:11.5px;color:var(--text3);margin-bottom:16px}
+  .chart-box{position:relative;height:270px}
+  .legend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px}
+  .leg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
+  .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:11px 14px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg-card2);border-bottom:1px solid rgba(160,120,255,.1)}
+  th:first-child{border-radius:10px 0 0 10px}th:last-child{border-radius:0 10px 10px 0}
+  th.r,td.r{text-align:right}
+  td{padding:13px 14px;border-bottom:1px solid rgba(160,120,255,.05);color:var(--text)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(168,127,255,.04)}
+  td.bold{font-weight:700}td.mono{font-variant-numeric:tabular-nums;font-weight:600}
+  /* ADS */
+  .ads{display:flex;flex-direction:column;gap:10px}
+  .ad-row{display:grid;grid-template-columns:46px 1fr 100px 120px 110px;gap:14px;align-items:center;
+    background:var(--bg-card2);border:1px solid rgba(160,120,255,.1);border-radius:var(--rsm);padding:14px 16px;transition:background .2s}
+  .ad-row:hover{background:var(--bg-row)}
+  .rank{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff}
+  .ad-info .name{font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+  .ad-info .camp{font-size:12.5px;color:var(--text);line-height:1.3}
+  .ad-info .camp span{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:6px}
+  .c-hot{background:rgba(240,144,112,.15);color:var(--orange)}
+  .c-rem{background:rgba(168,127,255,.15);color:var(--accent2)}
+  .ad-m{text-align:right}
+  .ad-m .v{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:var(--text);line-height:1}
+  .ad-m .k{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:4px}
+  @media(max-width:800px){.ad-row{grid-template-columns:46px 1fr}.ad-m:not(:first-of-type){display:none}}
+  /* HEATMAP */
+  .hm-wrap{background:var(--bg-card);border:1px solid rgba(160,120,255,.1);border-radius:var(--r);
+    padding:22px;margin-bottom:26px;overflow-x:auto;animation:rise .5s ease both;animation-delay:.25s}
+  .hm-table{width:100%;border-collapse:separate;border-spacing:6px;table-layout:fixed}
+  .hm-table th{background:transparent;border:none;padding:8px 6px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--text3);text-align:center}
+  .hm-table th:first-child{text-align:left;width:150px}
+  .hm-table td{border:none!important;padding:0}
+  .hm-cell{border-radius:10px;padding:14px 8px;text-align:center;transition:transform .2s;cursor:default}
+  .hm-cell:hover{transform:scale(1.05)}
+  .hm-cell .hv{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;line-height:1}
+  .hm-cell .hp{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-top:3px}
+  .hm-camp{padding:12px 8px!important;background:transparent!important;font-size:12px;font-weight:700;color:var(--text2)}
+  /* GAUGE */
+  .freq-card{background:var(--bg-card);border:1px solid rgba(160,120,255,.1);border-radius:var(--r);
+    padding:22px;margin-bottom:26px;animation:rise .5s ease both;animation-delay:.3s}
+  .freq-inner{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+  .freq-detail{flex:1;min-width:200px}
+  .freq-zones{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .fz{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--text2)}
+  .fz-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.fz b{color:var(--text)}
+  /* FOOTER */
+  .footer{border-top:1px solid rgba(160,120,255,.1);padding-top:20px;margin-top:8px;
+    text-align:center;color:var(--text3);font-size:12px}
+  .footer b{color:var(--accent)}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER (preenchido via JS) -->
+  <div class="hdr">
+    <div class="brand">
+      <div class="gem">✨</div>
+      <div>
+        <h1 id="h-cliente"></h1>
+        <p>Relatório Semanal · Meta Ads</p>
+      </div>
+    </div>
+    <div class="hdr-r">
+      <div class="pill pill-p" id="h-periodo"></div>
+      <div class="pill pill-g"><div class="dot-live"></div>Campanhas ativas · 7 dias</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- FUNIL -->
+  <div class="stitle"><span class="ico">⬇</span>Funil de Conversão</div>
+  <div class="funnel">
+    <div class="f-row">
+      <div class="f-lbl">Impressões <b id="f-imp"></b></div>
+      <div class="f-bar" style="width:100%;background:linear-gradient(90deg,#6a3fcb,#a87fff,#d06bcf)"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Alcance <b id="f-alc"></b></div>
+      <div class="f-bar" id="f-alc-bar" style="background:linear-gradient(90deg,#7040d0,#b290ff,#d872d4)"></div>
+      <div class="f-rate" id="f-alc-rate"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Cliques (todos) <b id="f-cli"></b></div>
+      <div class="f-bar" id="f-cli-bar" style="background:linear-gradient(90deg,#8050d8,#c2a0ff,#e082de)"></div>
+      <div class="f-rate" id="f-cli-rate"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Conversas iniciadas <b id="f-conv"></b></div>
+      <div class="f-bar" id="f-conv-bar" style="background:linear-gradient(90deg,#9060e0,#d2b0ff,#e892e8)"></div>
+      <div class="f-rate" id="f-conv-rate"></div>
+    </div>
+  </div>
+
+  <!-- KPI 3×3 -->
+  <div class="stitle"><span class="ico">∞</span>Visão Geral</div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- DEMOGRÁFICO -->
+  <div class="stitle"><span class="ico">👤</span>Alcance demográfico</div>
+  <div class="two-col">
+    <div class="card">
+      <div class="ctitle">Conversas por faixa etária</div>
+      <div class="csub" id="dem-sub"></div>
+      <div class="chart-box"><canvas id="agePie"></canvas></div>
+      <div class="legend" id="ageLeg"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Detalhamento por idade</div>
+      <div class="csub">Custo por mensagem e valor investido</div>
+      <table>
+        <thead>
+          <tr><th>Idade</th><th class="r">Conversas</th><th class="r">Part.&nbsp;%</th><th class="r">Custo/msg</th><th class="r">Valor gasto</th></tr>
+        </thead>
+        <tbody id="demTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GÊNERO -->
+  <div class="stitle"><span class="ico">♀</span>Segmentação de gênero</div>
+  <div class="two-col">
+    <div class="card">
+      <div class="ctitle">Alcance por gênero</div>
+      <div class="csub">Distribuição de conversas e investimento</div>
+      <div class="chart-box"><canvas id="genPie"></canvas></div>
+      <div class="legend" id="genLeg"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Detalhamento por gênero</div>
+      <div class="csub">Conversas, custo e alcance segmentado</div>
+      <table>
+        <thead>
+          <tr><th>Gênero</th><th class="r">Conversas</th><th class="r">Part.&nbsp;%</th><th class="r">Valor gasto</th><th class="r">Alcance</th></tr>
+        </thead>
+        <tbody id="genTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ANÚNCIOS -->
+  <div class="stitle"><span class="ico">📣</span>Principais anúncios</div>
+  <div class="card" style="margin-bottom:26px">
+    <div class="ctitle">Performance por anúncio</div>
+    <div class="csub" id="ads-sub" style="margin-bottom:18px"></div>
+    <div class="ads" id="adsList"></div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="stitle"><span class="ico">🔲</span>Análise cruzada — Campanha × Faixa etária</div>
+  <div class="hm-wrap">
+    <div class="ctitle" style="margin-bottom:4px">Conversas iniciadas por campanha e idade</div>
+    <div class="csub" style="margin-bottom:18px">Intensidade de cor = volume de conversas na célula</div>
+    <table class="hm-table">
+      <thead>
+        <tr><th style="text-align:left">Campanha</th><th>25–34</th><th>35–44</th><th>45–54</th><th>55–64</th><th>65+</th><th>Total</th></tr>
+      </thead>
+      <tbody id="hmBody"></tbody>
+    </table>
+  </div>
+
+  <!-- FREQUÊNCIA -->
+  <div class="stitle"><span class="ico">📶</span>Frequência & Saturação de público</div>
+  <div class="freq-card">
+    <div class="ctitle" style="margin-bottom:4px">Indicador de frequência</div>
+    <div class="csub" style="margin-bottom:20px">Quantidade média de vezes que a mesma pessoa viu o anúncio · acima de 3× pode indicar fadiga</div>
+    <div class="freq-inner">
+      <svg width="220" height="130" viewBox="0 0 220 130" id="gaugeEl"></svg>
+      <div class="freq-detail">
+        <div id="freq-val" style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:700;line-height:1"></div>
+        <div style="font-size:13px;color:var(--text2);margin-top:6px">Frequência média desta semana</div>
+        <div class="freq-zones">
+          <div class="fz"><div class="fz-dot" style="background:var(--green)"></div><b>1,0–2,0×</b> — Zona ideal. Público fresco.</div>
+          <div class="fz"><div class="fz-dot" style="background:var(--gold)"></div><b>2,0–3,0×</b> — Atenção. Monitorar CTR.</div>
+          <div class="fz"><div class="fz-dot" style="background:var(--red)"></div><b>3,0×+</b> — Saturação. Renovar criativo ou ampliar público.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer" id="footer-txt"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   MOTOR DO TEMPLATE — NÃO EDITE
+============================================================ */
+const D = RELATORIO;
+const fmt    = v => v.toLocaleString('pt-BR');
+const fmtR   = v => 'R$' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct = v => v.toFixed(1) + '%';
+const TT = {backgroundColor:'#14142e',titleColor:'#eeeaf8',bodyColor:'#a397c0',
+            borderColor:'rgba(160,120,255,.2)',borderWidth:1,padding:10,cornerRadius:8};
+
+/* header */
+document.title = `Relatório ${D.cliente} — Semanal`;
+document.getElementById('h-cliente').textContent = D.cliente;
+document.getElementById('h-periodo').textContent = `${D.periodo_inicio} — ${D.periodo_fim}`;
+
+/* funil */
+const alc_pct  = D.alcance   / D.impressoes;
+const cli_pct  = D.cliques   / D.impressoes;
+const conv_pct = D.conversas / D.impressoes;
+document.getElementById('f-imp').textContent  = fmt(D.impressoes);
+document.getElementById('f-alc').textContent  = fmt(D.alcance);
+document.getElementById('f-cli').textContent  = fmt(D.cliques);
+document.getElementById('f-conv').textContent = fmt(D.conversas);
+document.getElementById('f-alc-bar').style.width  = Math.round(alc_pct*100)+'%';
+document.getElementById('f-cli-bar').style.width  = Math.max(Math.round(cli_pct*100),4)+'%';
+document.getElementById('f-conv-bar').style.width = Math.max(Math.round(conv_pct*100),3)+'%';
+document.getElementById('f-alc-rate').textContent  = `${fmtPct(alc_pct*100)} das impressões · ${D.frequencia.toFixed(2).replace('.',',')} exibições por pessoa`;
+document.getElementById('f-cli-rate').textContent  = `CTR ${fmtPct(cli_pct*100)} · 1 clique a cada ${Math.round(1/cli_pct)} impressões`;
+document.getElementById('f-conv-rate').textContent = `${fmtPct(D.conversas/D.cliques*100)} dos cliques viraram conversa · ${fmtR(D.valor_gasto/D.conversas)} por conversa`;
+
+/* kpis */
+const cpr = D.valor_gasto / D.conversas;
+const kpis = [
+  {lbl:'Conversas por mensagem iniciadas', val:fmt(D.conversas),          spark:'conversas'},
+  {lbl:'Custo por mensagem iniciada',       val:fmtR(cpr),                spark:'cpr'},
+  {lbl:'Valor gasto',                       val:fmtR(D.valor_gasto),      spark:'gasto'},
+  {lbl:'Cliques (todos)',                   val:fmt(D.cliques),            spark:'cliques'},
+  {lbl:'CPC (custo por clique)',            val:fmtR(D.cpc),              spark:'cpc'},
+  {lbl:'CTR (taxa de cliques)',             val:D.ctr.toFixed(2).replace('.',',')+"%", spark:'ctr'},
+  {lbl:'Alcance',                           val:fmt(D.alcance),            spark:'alcance'},
+  {lbl:'Impressões',                        val:fmt(D.impressoes),         spark:'impressoes'},
+  {lbl:'Frequência',                        val:D.frequencia.toFixed(2).replace('.',',')+'×', spark:'frequencia', freq:true},
+];
+const sparkColors = {conversas:'var(--accent2)',cpr:'var(--rose)',gasto:'var(--gold)',cliques:'var(--blue)',
+  cpc:'var(--orange)',ctr:'var(--accent2)',alcance:'var(--green)',impressoes:'var(--blue)',frequencia:'var(--green)'};
+
+function sparkPath(vals,W,H,color){
+  const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
+  const xs=vals.map((_,i)=>i/(vals.length-1)*W);
+  const ys=vals.map(v=>H-(v-mn)/rng*(H-4)-2);
+  let d=`M ${xs[0]} ${ys[0]}`;
+  for(let i=1;i<xs.length;i++){const cx=(xs[i-1]+xs[i])/2;d+=` C ${cx} ${ys[i-1]}, ${cx} ${ys[i]}, ${xs[i]} ${ys[i]}`;}
+  const af=d+` L ${xs[xs.length-1]} ${H} L ${xs[0]} ${H} Z`;
+  return `<path class="spark-area" d="${af}" fill="${color}"/>
+          <path class="spark-line" d="${d}" stroke="${color}"/>`;
+}
+
+const grid = document.getElementById('kpiGrid');
+kpis.forEach((k,i)=>{
+  const col = sparkColors[k.spark]||'var(--accent2)';
+  const freqColor = k.freq && D.frequencia<2?'var(--green)':k.freq && D.frequencia<3?'var(--gold)':'var(--red)';
+  const badge = k.freq
+    ? `<div class="delta" style="background:${D.frequencia<2?'var(--gbg)':D.frequencia<3?'rgba(240,201,106,.12)':'var(--rbg)'};color:${freqColor}">${D.frequencia<2?'✓ Saudável':D.frequencia<3?'⚠ Atenção':'! Saturação'}</div>`
+    : `<div class="delta d-n">7 dias</div>`;
+  const vals = D.spark[k.spark] || [];
+  const svgContent = vals.length ? sparkPath(vals,200,28,col) : '';
+  const kpiEl = document.createElement('div');
+  kpiEl.className='kpi';
+  kpiEl.style.animationDelay=(i*.04)+'s';
+  if(k.freq) kpiEl.style.setProperty('color',freqColor);
+  kpiEl.innerHTML=`
+    <div class="kpi-lbl">${k.lbl}</div>
+    <div class="kpi-bot">
+      <div class="kpi-val" ${k.freq?`style="color:${freqColor}"`:''}>${k.val}</div>
+      ${badge}
+    </div>
+    <div class="kpi-spark"><svg viewBox="0 0 200 28" preserveAspectRatio="none">${svgContent}</svg></div>`;
+  grid.appendChild(kpiEl);
+});
+
+/* demográfico */
+const demTotal = D.demografico.reduce((s,r)=>s+(r.conversas||0),0);
+document.getElementById('dem-sub').textContent = `Distribuição de resultados (${demTotal} conversas)`;
+const demColors=['#a87fff','#5ddba0','#f09070','#e07fcf','#5db8f5'];
+const demLabels=D.demografico.map(r=>r.faixa);
+const demData=D.demografico.map(r=>r.conversas||0);
+Chart.defaults.color='#6a5a8a';Chart.defaults.font.family="'Syne',sans-serif";
+new Chart(document.getElementById('agePie'),{
+  type:'doughnut',
+  data:{labels:demLabels,datasets:[{data:demData,backgroundColor:demColors,borderColor:'#0c0c1e',borderWidth:3,hoverOffset:8}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.label}: ${c.parsed} conv. (${(c.parsed/demTotal*100).toFixed(1)}%)`}}}}
+});
+document.getElementById('ageLeg').innerHTML=demLabels.map((l,i)=>`
+  <div class="leg"><div class="ldot" style="background:${demColors[i]}"></div>
+    ${l}<span style="color:var(--text3);margin-left:4px">(${demData[i]?fmtPct(demData[i]/demTotal*100):'0%'})</span>
+  </div>`).join('');
+document.getElementById('demTable').innerHTML=D.demografico.map(r=>`
+  <tr><td class="bold">${r.faixa}</td><td class="r mono">${r.conversas||0}</td>
+  <td class="r mono">${r.conversas?fmtPct((r.conversas/demTotal*100)):'—'}</td>
+  <td class="r mono">${r.cpr?fmtR(r.cpr):'—'}</td>
+  <td class="r mono">${fmtR(r.gasto)}</td></tr>`).join('');
+
+/* gênero */
+const genTotal=D.genero.reduce((s,r)=>s+(r.conversas||0),0);
+const genColors=['#e07fcf','#5db8f5','#5ddba0'];
+new Chart(document.getElementById('genPie'),{
+  type:'doughnut',
+  data:{labels:D.genero.map(r=>r.label),datasets:[{data:D.genero.map(r=>r.conversas||0),backgroundColor:genColors,borderColor:'#0c0c1e',borderWidth:3,hoverOffset:8}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.label}: ${c.parsed} conv. (${(c.parsed/(genTotal||1)*100).toFixed(1)}%)`}}}}
+});
+document.getElementById('genLeg').innerHTML=D.genero.map((g,i)=>`
+  <div class="leg"><div class="ldot" style="background:${genColors[i]}"></div>
+    ${g.label}<span style="color:var(--text3);margin-left:4px">(${g.conversas?fmtPct(g.conversas/genTotal*100):'—'})</span>
+  </div>`).join('');
+document.getElementById('genTable').innerHTML=D.genero.map(g=>`
+  <tr><td class="bold">${g.label}</td><td class="r mono">${g.conversas||0}</td>
+  <td class="r mono">${g.conversas?fmtPct(g.conversas/genTotal*100):'—'}</td>
+  <td class="r mono">${fmtR(g.gasto)}</td>
+  <td class="r mono">${fmt(g.alcance)}</td></tr>`).join('');
+
+/* anúncios */
+document.getElementById('ads-sub').textContent = `Ordenado por conversas iniciadas · período ${D.periodo_inicio}–${D.periodo_fim}`;
+const rankGrads=['linear-gradient(135deg,#a87fff,#6a3fcb)','linear-gradient(135deg,#7a5fcf,#4a2fa5)',
+  'linear-gradient(135deg,#6a4fbf,#3a1f95)','linear-gradient(135deg,#5a3faf,#2a0f85)','linear-gradient(135deg,#4a2f9f,#1a0075)'];
+document.getElementById('adsList').innerHTML=D.anuncios.map((a,i)=>`
+  <div class="ad-row">
+    <div class="rank" style="background:${rankGrads[i]||rankGrads[4]}">${i+1}</div>
+    <div class="ad-info">
+      <div class="name">${a.nome}</div>
+      <div class="camp">${a.campanha}<span class="${a.tipo==='hot'?'c-hot':'c-rem'}">${a.tipo==='hot'?'Audiência Quente':'Remarketing'}</span></div>
+    </div>
+    <div class="ad-m"><div class="v">${a.conversas}</div><div class="k">Conversas</div></div>
+    <div class="ad-m"><div class="v">${fmtR(a.cpr)}</div><div class="k">Custo / msg</div></div>
+    <div class="ad-m"><div class="v">${fmtR(a.gasto)}</div><div class="k">Valor gasto</div></div>
+  </div>`).join('');
+
+/* heatmap */
+const allV=D.cruzado.flatMap(r=>r.vals).filter(v=>v>0);
+const maxV=Math.max(...allV);
+function cellBg(v,tipo){
+  if(!v) return 'rgba(255,255,255,.03)';
+  const pct=v/maxV;
+  return tipo==='hot'?`rgba(168,127,255,${(.12+pct*.65).toFixed(2)})`:`rgba(93,184,245,${(.12+pct*.65).toFixed(2)})`;
+}
+document.getElementById('hmBody').innerHTML=D.cruzado.map(row=>`
+  <tr>
+    <td class="hm-camp">${row.nome}<br>
+      <span class="${row.tipo==='hot'?'c-hot':'c-rem'}" style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;margin-top:4px;display:inline-block">
+        ${row.tipo==='hot'?'Quente':'Remkt'}</span></td>
+    ${row.vals.map(v=>`<td><div class="hm-cell" style="background:${cellBg(v,row.tipo)};color:${v/maxV>.45?'#eeeaf8':'var(--text2)'}">
+      <div class="hv">${v}</div><div class="hp">${v?Math.round(v/row.total*100)+'%':'—'}</div></div></td>`).join('')}
+    <td><div class="hm-cell" style="background:rgba(168,127,255,.12);color:var(--accent2)">
+      <div class="hv">${row.total}</div><div class="hp">total</div></div></td>
+  </tr>`).join('');
+
+/* gauge */
+(function(){
+  const svg=document.getElementById('gaugeEl');
+  const cx=110,cy=115,r=90,freq=D.frequencia,minF=1,maxF=4;
+  const freqColor=freq<2?'var(--green)':freq<3?'var(--gold)':'var(--red)';
+  document.getElementById('freq-val').style.color=freqColor;
+  document.getElementById('freq-val').textContent=freq.toFixed(2).replace('.',',')+'×';
+  function arcD(p0,p1){
+    const a0=Math.PI+p0*Math.PI,a1=Math.PI+p1*Math.PI;
+    return `M ${cx+r*Math.cos(a0)} ${cy+r*Math.sin(a0)} A ${r} ${r} 0 ${p1-p0>.5?1:0} 1 ${cx+r*Math.cos(a1)} ${cy+r*Math.sin(a1)}`;
+  }
+  const sw=18;
+  const needle_pct=(freq-minF)/(maxF-minF);
+  const angle=Math.PI+needle_pct*Math.PI;
+  svg.innerHTML=`
+    <path d="${arcD(0,1)}" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="${sw}" stroke-linecap="round"/>
+    <path d="${arcD(0,.333)}"  fill="none" stroke="#5ddba0" stroke-width="${sw}" opacity=".75"/>
+    <path d="${arcD(.333,.583)}" fill="none" stroke="#f0c96a" stroke-width="${sw}" opacity=".75"/>
+    <path d="${arcD(.583,1)}"  fill="none" stroke="#ff7a8e" stroke-width="${sw}" opacity=".75"/>
+    <line x1="${cx}" y1="${cy}" x2="${cx+75*Math.cos(angle)}" y2="${cy+75*Math.sin(angle)}" stroke="#eeeaf8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="6" fill="#a87fff"/>
+    <text x="${cx-r-4}" y="${cy+20}" font-size="10" fill="#6a5a8a" font-family="Syne">1,0</text>
+    <text x="${cx+r-12}" y="${cy+20}" font-size="10" fill="#6a5a8a" font-family="Syne">4,0</text>
+    <text x="${cx-12}" y="${cy-r+28}" font-size="10" fill="#6a5a8a" font-family="Syne">2,5</text>`;
+})();
+
+/* footer */
+document.getElementById('footer-txt').innerHTML=`${D.cliente} · <b>Relatório Semanal Meta Ads</b> · ${D.periodo_inicio} – ${D.periodo_fim}`;
+</script>
+</body>
+</html>
